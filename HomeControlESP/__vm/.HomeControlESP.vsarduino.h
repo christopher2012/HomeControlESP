@@ -16,7 +16,7 @@
 #define __ets__
 #define ICACHE_FLASH
 #define F_CPU 80000000L
-#define ARDUINO 164
+#define ARDUINO 166
 #define ARDUINO_ESP8266_ESP12
 #define ARDUINO_ARCH_ESP8266
 #define __cplusplus
@@ -100,4 +100,5 @@ extern "C" void __cxa_pure_virtual() {;}
 #define portInputRegister(P)
 #define portModeRegister(P)
 #include <..\HomeControlESP\HomeControlESP.ino>
+#include <..\HomeControlESP\resource.h>
 #endif

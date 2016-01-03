@@ -29,7 +29,6 @@
 */
 
 #include <ESP8266WiFi.h>
-#include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 
@@ -37,10 +36,13 @@ const char *ssid = "UPC2633536";
 const char *password = "niezgadnieszmnie";
 MDNSResponder mdns;
 
+
+const char* host = "api.thingspeak.com";
+const char* privateKey = "O6HQMA20AE4YQ3UO";
+
 ESP8266WebServer server(80);
 
 const int led = 13;
-
 
 
 void handleNotFound() {
@@ -81,7 +83,7 @@ void setup(void) {
 	Serial.println(ssid);
 	Serial.print("IP address: ");
 	Serial.println(WiFi.localIP());
-
+	
 	if (mdns.begin("esp8266", WiFi.localIP())) {
 		Serial.println("MDNS responder started");
 	}
@@ -90,15 +92,41 @@ void setup(void) {
 	server.on("/light", light);
 	server.on("/inline", []() {
 		server.send(200, "text/plain", "this works as well");
+		sendData("20.20");
 	});
 	server.onNotFound(handleNotFound);
 	server.begin();
 	Serial.println("HTTP server started");
+
 }
 
 void loop(void) {
 	mdns.update();
 	server.handleClient();
+	if (Serial.available() > 1) {
+		String message = "";
+		
+		while (Serial.available()) {
+			message += Serial.readString();
+		}
+		/**/
+		Serial.println("Temp");
+		Serial.println(message);
+		sendData(message);
+		/*
+		if (message.equals("IP")) {
+			Serial.print(WiFi.localIP());
+		}
+		else if (message.equals("ST")) {
+			
+		}
+		*/
+	}
+
+}
+
+void ala() {
+	Serial.println("ala");
 }
 
 void light() {
@@ -112,4 +140,47 @@ void light() {
 
 void settings() {
 	server.send(200, "text/plain", "OK");
+}
+
+
+void sendData(String value) {
+	Serial.println("Sending data to think speak...");
+
+	Serial.print("connecting to ");
+	Serial.println(host);
+	Serial.print("IP: ");
+	Serial.println(WiFi.localIP());
+	// Use WiFiClient class to create TCP connections
+	WiFiClient client;
+	const int httpPort = 80;
+	if (!client.connect(host, httpPort)) {
+		Serial.println("connection failed");
+		return;
+	}
+
+	// We now create a URI for the request
+	String url = "/update";
+	url += "?api_key=";
+	url += privateKey;
+	url += "&field1=";
+	url += value;
+
+	Serial.print("Requesting URL: ");
+	Serial.println(url);
+	String str = String("GET ") + url + " HTTP/1.1\r\n" +
+		"Host: " + host + "\r\n" +
+		"Connection: close\r\n\r\n";
+	Serial.println();
+	// This will send the request to the server
+	client.print(str);
+	delay(10);
+
+	// Read all the lines of the reply from server and print them to Serial
+	while (client.available()) {
+		String line = client.readStringUntil('\r');
+		Serial.print(line);
+	}
+
+	Serial.println();
+	Serial.println("closing connection");
 }
