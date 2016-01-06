@@ -65,6 +65,15 @@ void handleNotFound() {
 	digitalWrite(led, 0);
 }
 
+void execute() {
+	String msg = "MSG=";
+	msg += server.arg("command");
+	Serial.println(msg);
+	String response = "OK";
+
+	server.send(200, "text/plain", response);
+}
+
 void setup(void) {
 	pinMode(led, OUTPUT);
 	digitalWrite(led, 0);
@@ -88,8 +97,10 @@ void setup(void) {
 		Serial.println("MDNS responder started");
 	}
 
+	server.on("/android", execute);
 	server.on("/settings", settings);
 	server.on("/light", light);
+	server.on("/test", ala);
 	server.on("/inline", []() {
 		server.send(200, "text/plain", "this works as well");
 		sendData("20.20");
@@ -105,14 +116,29 @@ void loop(void) {
 	server.handleClient();
 	if (Serial.available() > 1) {
 		String message = "";
-		
-		while (Serial.available()) {
-			message += Serial.readString();
+		char c = Serial.read();
+
+		switch (c)
+		{
+			//temperature
+		case 'T':
+			while (Serial.available()) {
+				message += Serial.readString();
+			}
+			Serial.println("Temp");
+			Serial.println(message);
+			sendData(message);
+			break;
+			//IP
+		case 'I':
+			//Serial.print("MSG=");
+			Serial.println(WiFi.localIP());
+			break;
+
+		default:
+			break;
 		}
-		/**/
-		Serial.println("Temp");
-		Serial.println(message);
-		sendData(message);
+		
 		/*
 		if (message.equals("IP")) {
 			Serial.print(WiFi.localIP());
@@ -126,20 +152,47 @@ void loop(void) {
 }
 
 void ala() {
-	Serial.println("ala");
+	//Serial.println("ala");
+	String message = "{\"STATUS\":\"OK\", \"LIGHT\":1, \"BRIGTHNESS\":50, \"TEMP_IN\":22.5, \"TEMP_OUT\":10.5}";
+	server.send(200, "text/plain", message);
 }
 
 void light() {
 	String msg = "MSG=";
 	msg += server.arg("state");
-	Serial.print(msg);
+	Serial.println(msg);
 	String message = "OK";
 
 	server.send(200, "text/plain", message);
 }
 
 void settings() {
-	server.send(200, "text/plain", "OK");
+
+	int stack = 0;
+	while (Serial.available())
+		Serial.read();
+	Serial.println("MSG=D");
+	long temp = millis();
+	String data;
+	
+	while (temp + 1000 > millis()) {
+		data += Serial.readString();
+		/*
+		String str = Serial.readString();
+		Serial.println(str);
+		if (str.equals("{"))
+			stack++;
+		
+		if (stack > 0) {
+			data += str;
+			if (str.equals("}"))
+				stack--;
+			if (stack == 0)
+				break;
+		}		
+		*/		
+	}
+	server.send(200, "text/plain", data);
 }
 
 
