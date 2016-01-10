@@ -32,8 +32,8 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 
-const char *ssid = "UPC2633536";
-const char *password = "niezgadnieszmnie";
+const char *ssid = "UPC2633536";//"AndroidT";//"UPC2633536";
+const char *password = "niezgadnieszmnie"; //"1234567890";//"niezgadnieszmnie";
 MDNSResponder mdns;
 
 
@@ -114,39 +114,46 @@ void setup(void) {
 void loop(void) {
 	mdns.update();
 	server.handleClient();
-	if (Serial.available() > 1) {
-		String message = "";
-		char c = Serial.read();
+	if (Serial.available() > 2) {
+		String message = Serial.readString();
+		if (message.substring(0, 3).equals("III")) {
+			Serial.println(WiFi.localIP());
+		}
+		else if (message.substring(0, 3).equals("TTT")) {
+			sendData(message.substring(3));
+		}
+		/*
+		while (Serial.available()) {
+			char c = Serial.read();
+			message += c;
+		}
 
-		switch (c)
-		{
-			//temperature
-		case 'T':
+		if (message.equals("TTT")) {
+			message = "";
+			
 			while (Serial.available()) {
-				message += Serial.readString();
+				char c = Serial.read();
+				message += c;
+				Serial.println(c);
 			}
-			Serial.println("Temp");
+			
+
+			for (int i = 0; i < 3; i++) {
+				char c = Serial.read();
+					message += c;
+			}
 			Serial.println(message);
 			sendData(message);
-			break;
-			//IP
-		case 'I':
-			//Serial.print("MSG=");
-			Serial.println(WiFi.localIP());
-			break;
-
-		default:
-			break;
 		}
 		
-		/*
-		if (message.equals("IP")) {
-			Serial.print(WiFi.localIP());
+		if (message.equals("III")) {
+			Serial.println(WiFi.localIP());
 		}
-		else if (message.equals("ST")) {
-			
-		}
+		
 		*/
+		while (Serial.available()) {
+			Serial.read();
+		}
 	}
 
 }
@@ -197,12 +204,12 @@ void settings() {
 
 
 void sendData(String value) {
-	Serial.println("Sending data to think speak...");
+	//Serial.println("Sending data to think speak...");
 
-	Serial.print("connecting to ");
-	Serial.println(host);
-	Serial.print("IP: ");
-	Serial.println(WiFi.localIP());
+	//Serial.print("connecting to ");
+	//Serial.println(host);
+	//Serial.print("IP: ");
+	//Serial.println(WiFi.localIP());
 	// Use WiFiClient class to create TCP connections
 	WiFiClient client;
 	const int httpPort = 80;
@@ -218,12 +225,12 @@ void sendData(String value) {
 	url += "&field1=";
 	url += value;
 
-	Serial.print("Requesting URL: ");
-	Serial.println(url);
+	//Serial.print("Requesting URL: ");
+	//Serial.println(url);
 	String str = String("GET ") + url + " HTTP/1.1\r\n" +
 		"Host: " + host + "\r\n" +
 		"Connection: close\r\n\r\n";
-	Serial.println();
+	//Serial.println();
 	// This will send the request to the server
 	client.print(str);
 	delay(10);
@@ -231,9 +238,9 @@ void sendData(String value) {
 	// Read all the lines of the reply from server and print them to Serial
 	while (client.available()) {
 		String line = client.readStringUntil('\r');
-		Serial.print(line);
+		//Serial.print(line);
 	}
 
-	Serial.println();
-	Serial.println("closing connection");
+	//Serial.println();
+	//Serial.println("closing connection");
 }
