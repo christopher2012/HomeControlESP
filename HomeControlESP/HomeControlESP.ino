@@ -103,7 +103,7 @@ void setup(void) {
 	server.on("/test", ala);
 	server.on("/inline", []() {
 		server.send(200, "text/plain", "this works as well");
-		sendData("20.20");
+		sendData("20.20", "-15.22");
 	});
 	server.onNotFound(handleNotFound);
 	server.begin();
@@ -120,7 +120,15 @@ void loop(void) {
 			Serial.println(WiFi.localIP());
 		}
 		else if (message.substring(0, 3).equals("TTT")) {
-			sendData(message.substring(3));
+			message = message.substring(3);
+			String tempIn="";
+			String tempOut="";
+			int i = 0;
+			while (message.charAt(i++) != ';') {
+				tempIn += message.charAt(i-1);
+			}
+			tempOut = message.substring(i++);
+			sendData(tempIn, tempOut);
 		}
 		/*
 		while (Serial.available()) {
@@ -182,8 +190,11 @@ void settings() {
 	long temp = millis();
 	String data;
 	
-	while (temp + 1000 > millis()) {
-		data += Serial.readString();
+	while (temp + 2000 > millis()) {
+		if (Serial.available() > 10) {
+			data = Serial.readString();
+			break;
+		}
 		/*
 		String str = Serial.readString();
 		Serial.println(str);
@@ -203,7 +214,7 @@ void settings() {
 }
 
 
-void sendData(String value) {
+void sendData(String tempIn, String tempOut) {
 	//Serial.println("Sending data to think speak...");
 
 	//Serial.print("connecting to ");
@@ -223,10 +234,12 @@ void sendData(String value) {
 	url += "?api_key=";
 	url += privateKey;
 	url += "&field1=";
-	url += value;
+	url += tempIn;
+	url += "&field2=";
+	url += tempOut;
 
-	//Serial.print("Requesting URL: ");
-	//Serial.println(url);
+	Serial.print("Requesting URL: ");
+	Serial.println(url);
 	String str = String("GET ") + url + " HTTP/1.1\r\n" +
 		"Host: " + host + "\r\n" +
 		"Connection: close\r\n\r\n";
